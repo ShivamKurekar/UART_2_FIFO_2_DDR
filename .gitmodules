@@ -1,0 +1,3 @@
+[submodule "rtl/FIFO"]
+	path = rtl/FIFO
+	url = git@github.com:ShivamKurekar/FIFO.git
