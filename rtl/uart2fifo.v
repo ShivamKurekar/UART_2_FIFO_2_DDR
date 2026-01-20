@@ -3,47 +3,70 @@ module uart2fifo (
     input data,
     output [3:0] led
 );
-    localparam DEPTH = 8;
+    localparam DEPTH = 4;
     localparam DATA_WIDTH = 16;
 
     wire valid_in, packet_valid;
-    wire [7:0] out_data, packet_data;
+    wire [7:0] rx_out_data;
+    wire [DATA_WIDTH-1 :0 ] packet_data;
     
-    UART_RX 
-        UART_RX_inst (
+    UART_RX UART_RX_inst (
         .i_Clock (i_clk),
         .i_Rx_Serial (data),
         .o_Rx_DV (valid_in),
-        .o_Rx_Byte (out_data)
+        .o_Rx_Byte (rx_out_data)
         );
 
 
-    packetizer
+    packetizer #(.DATA_WIDTH(DATA_WIDTH))
         pack(
         .i_clk(i_clk),
         .i_valid(valid_in),
-        .i_data(out_data),
+        .i_data(rx_out_data),
         .o_data(packet_data),
         .o_valid(packet_valid)
         );
 
     
+    wire fifo_full, fifo_empty;
+    wire led_wave_0, led_wave_1, led_wave_2, led_wave_3;
+
     async_fifo #(
         .DEPTH(DEPTH),
         .DATA_WIDTH(DATA_WIDTH)
     ) fifo (
         .i_wr_clk  (i_clk),
-        .i_wr_rstn (1),
+        .i_wr_rstn (1'b1),
         .i_wr_en   (packet_valid),
         .i_wr_data (packet_data),
-        .o_full    (led[3]),
+        .o_full    (fifo_full),
 
-        .i_rd_clk  (),
-        .i_rd_rstn (),
+        .i_rd_clk  (i_clk),
+        .i_rd_rstn (1'b1),
         .i_rd_en   (),
         .o_rd_data (),
-        .o_empty   ()
+        .o_empty   (fifo_empty)
     );
+
+    /*
+    axi_master master #()(
+        .
+    );
+    */
+
+
+    led_wave
+    wave (
+        .i_clk(i_clk),
+        .en(1),
+        .led_1(led_wave_0),
+        .led_2(led_wave_1),
+        .led_3(led_wave_2),
+        .led_4(led_wave_3)
+    );
+
+    assign led = (fifo_full)? 4'b1111 : (fifo_empty)? 4'b0001 : {led_wave_3, led_wave_2, led_wave_1, led_wave_0};
+    
 endmodule //uart2fifo
 
 
