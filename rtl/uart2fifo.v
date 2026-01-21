@@ -3,8 +3,8 @@ module uart2fifo (
     input data,
     output [3:0] led
 );
-    localparam DEPTH = 4;
-    localparam DATA_WIDTH = 16;
+    localparam DEPTH = 32; // Should always be of 2^N 
+    localparam DATA_WIDTH = 256;
 
     wire valid_in, packet_valid;
     wire [7:0] rx_out_data;
